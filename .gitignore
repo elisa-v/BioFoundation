@@ -1,3 +1,13 @@
 data/
 scripts/check_pickles.py
 scripts/check_h5.py
+scripts/check_gpu.py
+scripts/check_tcn.py
+scripts/test_batch.py
+
+outputs/
+checkpoints/
+tb/
+
+__pycache__/
+*.py[cod]

@@ -34,8 +34,8 @@ from pytorch_lightning import seed_everything
 from datetime import datetime
 
 
-os.environ['DATA_PATH'] = "#CHANGEME"
-os.environ['CHECKPOINT_DIR'] = '#CHANGEME'
+os.environ['DATA_PATH'] = "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\data\\"
+os.environ['CHECKPOINT_DIR'] = "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\runs\\checkpoints"
 
 OmegaConf.register_new_resolver("env", lambda key: os.getenv(key))
 OmegaConf.register_new_resolver("get_method", hydra.utils.get_method)
@@ -44,7 +44,6 @@ logger: Logger = logging.getLogger(__name__)
 
 def train(cfg: DictConfig):
     seed_everything(cfg.seed)
-
     
     date_format = "%d_%m_%H-%M"  
 

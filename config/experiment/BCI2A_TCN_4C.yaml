@@ -1,5 +1,5 @@
 # @package _global_
-tag: BCI2A_TCN_LR
+tag: BCI2A_TCN_4C
 
 # compute / io
 gpus: 1
@@ -30,7 +30,7 @@ defaults:
   - override /scheduler: cosine
 
 model:
-  classification_type: "bc" # binary classification
+  classification_type: "mc" # multiclass
 
 trainer:
   accelerator: gpu
