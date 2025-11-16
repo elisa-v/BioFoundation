@@ -9,22 +9,23 @@
 
 from pathlib import Path
 import numpy as np
+
 from scipy.io import loadmat
 import scipy.io as sio
-import os
-from os.path import join as pjoin
-
-from typing import Dict, List, Literal, Tuple
 from scipy.signal import butter, filtfilt
 from scipy.io.matlab import mat_struct
+
+import os
+from os.path import join as pjoin
+import argparse
+
+from typing import Dict, List, Literal, Tuple
+
 import pickle
 
 
 def load_bci_competition_data(data_dir, subject_number):
-    """
-    Load BCI Competition IV Dataset 2a and convert to the expected format.
-
-    """
+    """Load BCI Competition IV Dataset 2a and convert to the expected format."""
     mat_fname = pjoin(data_dir, f'A0{subject_number}T.mat')
     mat_contents = sio.loadmat(mat_fname, squeeze_me=True, struct_as_record=False)
     data = mat_contents['data']
@@ -59,10 +60,7 @@ def bandpass_filter(
     high: float = 40.0,
     order: int = 5,
 ) -> np.ndarray:
-    """
-    Zero-phase Butterworth band-pass filter.
-
-    """
+    """Zero-phase Butterworth band-pass filter."""
     nyq = 0.5 * fs
     low_n = low / nyq
     high_n = high / nyq
@@ -74,10 +72,7 @@ def regress_out_eog(
     eeg: np.ndarray,
     eog: np.ndarray,
 ) -> np.ndarray:
-    """
-    Remove EOG components from EEG via linear regression.
-
-    """
+    """ Remove EOG components from EEG via linear regression."""
     oto = eog.T @ eog          # [n_eog, n_eog]
     ots = eog.T @ eeg          # [n_eog, n_eeg]
     b = np.linalg.pinv(oto) @ ots
@@ -93,9 +88,7 @@ def extract_imagery_segment(
     imag_offset_s: float,
     imag_dur_s: float
 ) -> np.ndarray:
-    """
-    Extract the motor imagery segment for a trial.
-    """
+    """Extract the motor imagery segment for a trial."""
     imag_offset = int(imag_offset_s * fs)
     imag_len = int(imag_dur_s * fs)
 
@@ -126,17 +119,13 @@ def process_bci_data(
     imag_offset_s: float = 3.5, # without visual cue overlapping
     imag_dur_s: float = 2.5
 ) -> Dict[str, List[np.ndarray]]:
-    """
-    Process BCI Competition IV 2a matlab data into MI trials.
-
+    """Process BCI Competition IV 2a matlab data into MI trials.
     Steps:
       1. Split EEG (22 ch) and EOG (3 ch)
       2. Band-pass filter 0.5-40 Hz (EEG)
       3. Regress out EOG from EEG
       4. Extract MI windows 
-      5. Discard artifact trials based on visual inspection
-
-    """
+      5. Discard artifact trials based on visual inspection."""
     
     subject_data: Dict[str, List[np.ndarray]] = {
         "L": [],
@@ -205,11 +194,8 @@ def process_bci_data(
 
 def trials_to_samples(subject_data: Dict[str, List[np.ndarray]],
                        task: str = "LR") -> Tuple[List[np.ndarray], List[int]]:
-    """
-    Convert the dict of class->trials into flat (X,y) lists.
-    X is returned as [C, T] to match the TUH saving convention.
-    For now: 'LR' = Left vs Right (0/1).
-    """
+    """Convert the dict of class-> trials into flat (X,y) lists. 
+    X is returned as [C, T] to match the TUH saving convention."""
     X_list, y_list = [], []
 
     if task == "LR":
@@ -236,10 +222,8 @@ def export_to_pickles(X_list: List[np.ndarray],
                       out_dir: str | Path,
                       split: str,
                       prefix: str):
-    """
-    Save each (X,y) pair as one pickle:
-      out_dir/data/processed/{split}/<prefix>_<idx>.pkl
-    """
+    """Save each (X,y) pair as one pickle:
+      out_dir/data/processed/{split}/<prefix>_<idx>.pkl"""
     base = Path(out_dir) / split
     base.mkdir(parents=True, exist_ok=True)
 
@@ -262,16 +246,6 @@ def list_session_fields(session: mat_struct) -> List[str]:
     """Quick inspector for a single run struct."""
     return list(getattr(session, "_fieldnames", []))
 
-
-def index_bci2a_files(mat_root: str, subjects: List[int]) -> Dict[int, Dict[str, List[str]]]:
-    idx = {}
-    for s in subjects:
-        idx[s] = {
-            "trainT": [os.path.join(mat_root, f"A0{s}T.mat")],  # training runs (with labels)
-            "testE":  [os.path.join(mat_root, f"A0{s}E.mat")],  # test runs (no labels in original comp)
-        }
-    return idx
-
 def split_subjects_leave_one_out(all_subjects: List[int], held_out: int
 ) -> Tuple[List[int], List[int]]:
     trval = [s for s in all_subjects if s != held_out]
@@ -280,31 +254,46 @@ def split_subjects_leave_one_out(all_subjects: List[int], held_out: int
 
 def split_train_val_by_subjects(subjects: List[int], val_ratio: float = 0.2, seed: int = 42
 ) -> Tuple[List[int], List[int]]:
+    """Split a list of subjects into training and validation sets."""
     rng = np.random.default_rng(seed)
     subs = subjects.copy()
     rng.shuffle(subs)
     k = int(round(len(subs) * (1 - val_ratio)))
     return subs[:k], subs[k:]
 
+def index_bci2a_files(mat_root: str, subjects: List[int]) -> Dict[int, Dict[str, List[str]]]:
+    """Create an index of available .mat files for each subject."""
+    idx = {}
+    for s in subjects:
+        idx[s] = {
+            "trainT": [os.path.join(mat_root, f"A0{s}T.mat")],  # training runs (with labels)
+            "testE":  [os.path.join(mat_root, f"A0{s}E.mat")],  # test runs (no labels in original comp)
+        }
+    return idx
+
 def split_mode_leave_one_subject_out(
     mat_root: str,
     subjects: List[int],
     held_out_subject: int,
     val_ratio: float = 0.2,
-    seed: int = 123
+    seed: int = 42
 ):
+    """Split data in leave-one-subject-out mode."""
     file_idx = index_bci2a_files(mat_root, subjects)
 
     trainval_subjects, test_subjects = split_subjects_leave_one_out(subjects, held_out_subject)
-    # Train/Val: use T files from trainval subjects
-    trval_paths = [file_idx[s]["trainT"][0] for s in trainval_subjects]
-    # Test: use T of held-out for labeled evaluation (or switch to E if you want unlabeled compat)
-    test_paths  = [file_idx[s]["trainT"][0] for s in test_subjects]
+    trval_paths = [file_idx[s]["trainT"][0] for s in trainval_subjects] + [file_idx[s]["testE"][0] for s in trainval_subjects]
+    test_paths  = [file_idx[s]["trainT"][0] for s in test_subjects] + [file_idx[s]["testE"][0] for s in test_subjects]
 
-    # Now split train/val at subject level
-    tr_subs, val_subs = split_train_val_by_subjects(trainval_subjects, val_ratio, seed)
-    train_paths = [file_idx[s]["trainT"][0] for s in tr_subs]
-    val_paths   = [file_idx[s]["trainT"][0] for s in val_subs]
+    np.random.seed(seed)
+    np.random.shuffle(trval_paths)
+    train_files, val_files = np.split(np.array(trval_paths), [int(len(trval_paths) * (1-val_ratio))])
+    train_paths = train_files.tolist()
+    val_paths   = val_files.tolist()
+
+    # print(f"Training paths ({len(train_paths)}): {train_paths}")
+    # print(f"Validation paths ({len(val_paths)}): {val_paths}")
+    # print(f"Test paths ({len(test_paths)}): {test_paths}")
 
     return train_paths, val_paths, test_paths
 
@@ -314,25 +303,32 @@ def split_mode_T_as_train_val_E_as_test(
     val_ratio: float = 0.2,
     seed: int = 123
 ):
+    """Split data in T-as-train/val and E-as-test mode following original split"""
     file_idx = index_bci2a_files(mat_root, subjects)
     # Subject-level val split
     tr_subs, val_subs = split_train_val_by_subjects(subjects, val_ratio, seed)
     train_paths = [file_idx[s]["trainT"][0] for s in tr_subs]
     val_paths   = [file_idx[s]["trainT"][0] for s in val_subs]
     test_paths  = [file_idx[s]["testE"][0]  for s in subjects]
+
+    # print(f"Training paths ({len(train_paths)}): {train_paths}")
+    # print(f"Validation paths ({len(val_paths)}): {val_paths}")
+    # print(f"Test paths ({len(test_paths)}): {test_paths}")
+
     return train_paths, val_paths, test_paths
 
 
-def main(
+def split_and_process_data(
     mat_root: str,
     out_root: str,
     subjects: List[int] | None = None,
     task: str = "LR", 
-    split_mode: str = "loo", # or "TvsE"
+    split_mode: str = "loo", # "loo" (leave-one-out) or "TvsE" (subjects both in train/val and test)
     held_out_subject: int = 9,  # used only for loo
     val_ratio: float = 0.2,
     seed: int = 123
 ):
+    """Split and process BCI Competition IV-2a data into pickles."""
     if subjects is None:
         subjects = list(range(1, 10))
 
@@ -348,18 +344,16 @@ def main(
         raise ValueError("split_mode must be 'loo' or 'TvsE'")
 
     def process_list(paths, split_name: str):
-        # os.makedirs(os.path.join(out_root, "processed", split_name), exist_ok=True)
 
         for p in paths:
-            subj, phase = parse_mat_name(p)            # robust filename parsing
-            runs = load_runs_from_mat(p)               # load THIS file (T or E)
-
+            subj, phase = parse_mat_name(p)            
+            runs = load_runs_from_mat(p)              
+            print(f"Processing Subject {subj} Phase {phase} ({p}), #runs={len(runs)}")
             subject_data = process_bci_data(
                 runs, imag_offset_s=3.5, imag_dur_s=2.5
             )
             X, y = trials_to_samples(subject_data, task=task)
 
-            # optional: include phase in prefix so train/val/test files are traceable
             subj_prefix = f"S{subj:02d}_{phase}_{task}"
             export_to_pickles(X, y, out_root, split_name, subj_prefix)
 
@@ -368,21 +362,46 @@ def main(
     process_list(test_paths,  "test")
 
 
-if __name__ == "__main__":
-    path_data = "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\data\\"
-    path_raw_data = path_data + "raw\\"
-    path_processed_data = path_data + "processed\\"
+def _parse_subjects(s: str | None) -> list[int]:
+    """Parse a comma-separated string of subject IDs into a list of integers."""
+    if not s:
+        return list(range(1, 10))  # default: 1..9
+    return [int(x) for x in s.split(",")]
 
-    main(
-        mat_root=path_raw_data,
-        out_root=path_processed_data,
-        subjects=list(range(1,10)),
-        task="LR",
-        split_mode="loo",
-        held_out_subject=9,
-        val_ratio=0.15,
-        seed=123
+def main():
+    p = argparse.ArgumentParser(description="BCI IV-2a → MI trial pickles")
+    p.add_argument("--mat-root", required=True, help="Folder containing A0{S}{T|E}.mat files")
+    p.add_argument("--out-root", required=True, help="Output folder for processed pickles")
+    p.add_argument("--subjects", default=None,
+                   help="Comma-separated subjects (e.g. '1,2,3'); default=1..9")
+    p.add_argument("--task", default="LR", choices=["LR", "4C"], help="Classification task")
+    p.add_argument("--split-mode", default="loo", choices=["loo", "TvsE"],
+                   help="CV mode: leave-one-out or Train/Val on T, Test on E")
+    p.add_argument("--held-out-subject", type=int, default=9,
+                   help="Held-out subject id for LOO")
+    p.add_argument("--val-ratio", type=float, default=0.2, help="Validation fraction")
+    p.add_argument("--seed", type=int, default=123, help="RNG seed")
+    p.add_argument("--imag-offset", type=float, default=3.5, help="MI window start (s)")
+    p.add_argument("--imag-dur", type=float, default=2.5, help="MI window length (s)")
+    args = p.parse_args()
+
+    subjects = _parse_subjects(args.subjects)
+
+    split_and_process_data(
+        mat_root=str(Path(args.mat_root)),
+        out_root=str(Path(args.out_root)),
+        subjects=subjects,
+        task=args.task,
+        split_mode=args.split_mode,
+        held_out_subject=args.held_out_subject,
+        val_ratio=args.val_ratio,
+        seed=args.seed,
     )
+
+    print("Processing complete.")
+
+if __name__ == "__main__":
+    main()
 
 
     
