@@ -1,0 +1,23 @@
+# @package _global_
+
+data_module:
+  _target_: data_module.finetune_data_module.FinetuneDataModule
+  name: "eeg"
+  cfg:
+    num_workers: ${num_workers}
+    batch_size: ${batch_size}
+  train:
+    _target_: 'datasets.hdf5_dataset.HDF5Loader'
+    hdf5_file: '${env:DATA_PATH}/BCI2A_data/train.h5'
+    finetune: True
+    squeeze: False
+  val:
+    _target_: 'datasets.hdf5_dataset.HDF5Loader'
+    hdf5_file: '${env:DATA_PATH}/BCI2A_data/val.h5'
+    finetune: True
+    squeeze: False
+  test: 
+    _target_: 'datasets.hdf5_dataset.HDF5Loader'
+    hdf5_file: '${env:DATA_PATH}/BCI2A_data/test.h5'
+    finetune: True
+    squeeze: False

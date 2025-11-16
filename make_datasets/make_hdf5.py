@@ -130,8 +130,8 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="All",
-        choices=["TUAR", "TUSL", "TUAB", "All"],
-        help="Which dataset to process. 'All' processes all three."
+        choices=["TUAR", "TUSL", "TUAB", "BCI2A", "All"],
+        help="Which dataset to process. 'All' processes all three. BCI2A→'BCI2A_data'"
     )
     parser.add_argument(
         "--remove_pkl",
@@ -145,13 +145,15 @@ if __name__ == "__main__":
     
     datasets_to_process = []
     if args.dataset == "All":
-        datasets_to_process = ["TUAR_data", "TUSL_data", "TUAB_data"]
+        datasets_to_process = ["TUAR_data", "TUSL_data", "TUAB_data", "BCI2A_data"]
     elif args.dataset == "TUAR":
         datasets_to_process = ["TUAR_data"]
     elif args.dataset == "TUSL":
         datasets_to_process = ["TUSL_data"]
     elif args.dataset == "TUAB":
         datasets_to_process = ["TUAB_data"]
+    elif args.dataset == "BCI2A":
+        datasets_to_process = ["BCI2A_data"]
 
     # Loop through the selected datasets and process them
     for data_folder_name in datasets_to_process:

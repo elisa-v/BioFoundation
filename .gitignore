@@ -1,2 +1,3 @@
 data/
 scripts/check_pickles.py
+scripts/check_h5.py

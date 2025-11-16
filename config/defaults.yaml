@@ -50,7 +50,7 @@ callbacks:
 
 io:
   version: 0
-  base_output_path: "#CHANGEME"
+  base_output_path: "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\runs"
 
 trainer:
   num_nodes: ${num_nodes}
@@ -80,8 +80,8 @@ input_normalization:
 
 defaults:
   - _self_
-  - data_module: pretrain_data_module
-  - task: pretrain_task
+  - data_module: bci2a_finetune
+  - task: finetune_task
   - scheduler: multi_step_lr
-  - model: FEMBA_pretrain
-  - criterion: pretrain_criterion
+  - model: BCI2A_TCN_LR_baseline
+  - criterion: finetune_criterion

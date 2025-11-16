@@ -59,7 +59,7 @@ class HDF5Loader(torch.utils.data.Dataset):
 
             if self.finetune:
                 Y = grp["y"][sample_idx]
-                Y = torch.LongTensor([Y]).squeeze()
+                Y = torch.LongTensor([Y])  # Keep as 1D tensor
                 if self.use_cache:
                     self.cache[index] = (X, Y)
             else:

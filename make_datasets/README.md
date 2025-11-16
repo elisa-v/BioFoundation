@@ -90,7 +90,7 @@ python make_datasets/make_hdf5.py --prepath /processed_eeg [options]
 **Arguments**
 - `--prepath` (Required): The absolute path to the directory containing your dataset folders (e.g., `/processed_eeg/`). This directory
   should contain the `TUAB_data`, `TUSL_data`, etc., folders created by `process_raw_eeg.py`, so this should mirror the `--output_dir` used previously.
-- `--dataset` (Optional): Which dataset to process. Choices: `TUAR`, `TUSL`, `TUAB`, `All` (default: `All`).
+- `--dataset` (Optional): Which dataset to process. Choices: `TUAR`, `TUSL`, `TUAB`, `BCI2A` `All` (default: `BCI2A`).
 - `--remove_pkl` (Optional): If included, this flag will delete the `processed` directory (containing all the intermediate `.pkl` files)
   for a dataset after its `.h5` files are successfully created.
 
