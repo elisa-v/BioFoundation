@@ -24,7 +24,7 @@ from typing import Dict, List, Literal, Tuple
 import pickle
 
 
-def load_bci_competition_data(data_dir, subject_number):
+def load_bci_competition_data(data_dir, subject_number) -> mat_struct:
     """Load BCI Competition IV Dataset 2a and convert to the expected format."""
     mat_fname = pjoin(data_dir, f'A0{subject_number}T.mat')
     mat_contents = sio.loadmat(mat_fname, squeeze_me=True, struct_as_record=False)
@@ -47,7 +47,7 @@ def parse_mat_name(path: str) -> tuple[int, str]:
     base = os.path.splitext(os.path.basename(path))[0]  # e.g. 'A01T'
     return int(base[1:3]), base[3]                      # (1, 'T') or (1, 'E')
 
-def load_runs_from_mat(mat_path: str):
+def load_runs_from_mat(mat_path: str) -> list[mat_struct]:
     """Load the 'data' cell array from a single .mat file (T or E)."""
     import scipy.io as sio
     m = sio.loadmat(mat_path, squeeze_me=True, struct_as_record=False)
@@ -100,9 +100,7 @@ def extract_imagery_segment(
 
     return eeg[start:end, :]
 
-from collections import Counter
-
-def summarize_subject_data(subject_data):
+def summarize_subject_data(subject_data) -> None:
     """Print a compact summary of #trials per class and total."""
     counts = {k: len(v) for k, v in subject_data.items()}
     total = sum(counts.values())
@@ -195,7 +193,7 @@ def process_bci_data(
 def trials_to_samples(subject_data: Dict[str, List[np.ndarray]],
                        task: str = "LR") -> Tuple[List[np.ndarray], List[int]]:
     """Convert the dict of class-> trials into flat (X,y) lists. 
-    X is returned as [C, T] to match the TUH saving convention."""
+    X is returned as [C, T] to match the saving convention."""
     X_list, y_list = [], []
 
     if task == "LR":
@@ -221,7 +219,7 @@ def export_to_pickles(X_list: List[np.ndarray],
                       y_list: List[int],
                       out_dir: str | Path,
                       split: str,
-                      prefix: str):
+                      prefix: str) -> None:
     """Save each (X,y) pair as one pickle:
       out_dir/data/processed/{split}/<prefix>_<idx>.pkl"""
     base = Path(out_dir) / split
@@ -232,15 +230,6 @@ def export_to_pickles(X_list: List[np.ndarray],
         p = base / f"{prefix}_{i:05d}.pkl"
         with open(p, "wb") as f:
             pickle.dump(sample, f)
-
-def concat_trials(all_subject_data: list[dict], task: str) -> Tuple[list, list]:
-    """Turn a list of subject_data dicts into flat X, y."""
-    X_all, y_all = [], []
-    for sd in all_subject_data:
-        Xs, ys = trials_to_samples(sd, task=task)
-        X_all.extend(Xs)
-        y_all.extend(ys)
-    return X_all, y_all
 
 def list_session_fields(session: mat_struct) -> List[str]:
     """Quick inspector for a single run struct."""
@@ -277,7 +266,7 @@ def split_mode_leave_one_subject_out(
     held_out_subject: int,
     val_ratio: float = 0.2,
     seed: int = 42
-):
+) -> Tuple[List[str], List[str], List[str]]:
     """Split data in leave-one-subject-out mode."""
     file_idx = index_bci2a_files(mat_root, subjects)
 
@@ -302,7 +291,7 @@ def split_mode_T_as_train_val_E_as_test(
     subjects: List[int],
     val_ratio: float = 0.2,
     seed: int = 123
-):
+) -> Tuple[List[str], List[str], List[str]]:
     """Split data in T-as-train/val and E-as-test mode following original split"""
     file_idx = index_bci2a_files(mat_root, subjects)
     # Subject-level val split
@@ -327,7 +316,7 @@ def split_and_process_data(
     held_out_subject: int = 9,  # used only for loo
     val_ratio: float = 0.2,
     seed: int = 123
-):
+) -> None:
     """Split and process BCI Competition IV-2a data into pickles."""
     if subjects is None:
         subjects = list(range(1, 10))
@@ -343,7 +332,8 @@ def split_and_process_data(
     else:
         raise ValueError("split_mode must be 'loo' or 'TvsE'")
 
-    def process_list(paths, split_name: str):
+    def process_list(paths, split_name: str, seed: int = 123) -> None:
+        rng = np.random.default_rng(seed)
 
         for p in paths:
             subj, phase = parse_mat_name(p)            
@@ -354,8 +344,13 @@ def split_and_process_data(
             )
             X, y = trials_to_samples(subject_data, task=task)
 
+            # Reproducible shuffle while preserving [C, T] per sample
+            idx = rng.permutation(len(y))
+            X_shuf = [X[i] for i in idx]
+            y_shuf = [int(y[i]) for i in idx]
+
             subj_prefix = f"S{subj:02d}_{phase}_{task}"
-            export_to_pickles(X, y, out_root, split_name, subj_prefix)
+            export_to_pickles(X_shuf, y_shuf, out_root, split_name, subj_prefix)
 
     process_list(train_paths, "train")
     process_list(val_paths,   "val")
