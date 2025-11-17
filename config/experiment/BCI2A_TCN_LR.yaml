@@ -37,7 +37,7 @@ trainer:
   devices: ${gpus}
   num_nodes: ${num_nodes}
   strategy: auto
-  max_epochs: 40
+  max_epochs: 100
 
 model_checkpoint:
   save_last: True

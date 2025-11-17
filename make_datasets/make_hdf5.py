@@ -90,10 +90,14 @@ def process_dataset(prepath, dataset_name, splits, finetune, remove_pkl):
     
     # Path to the directory containing all split folders (train/, val/, test/)
     processed_dir_path = os.path.join(prepath, dataset_name, "processed")
+    dataset_root_path = os.path.join(prepath, dataset_name)
 
     for td in splits:
         target_h5_file = os.path.join(prepath, dataset_name, f"{td}.h5")
-        source_pickle_dir = os.path.join(processed_dir_path, td) # Use processed_dir_path
+        # Check for source in two locations: processed/split/ or directly split/
+        source_pickle_dir = os.path.join(processed_dir_path, td)
+        if not os.path.isdir(source_pickle_dir):
+            source_pickle_dir = os.path.join(dataset_root_path, td)
 
         if os.path.exists(target_h5_file):
             print(f"{dataset_name} {td}.h5 already exists. Skipping...")
