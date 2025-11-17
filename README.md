@@ -22,6 +22,15 @@ Copyright (C) 2025 ETH Zurich, Switzerland. SPDX-License-Identifier: Apache-2.0.
 
 Authors: Thorir Mar Ingolfsson, Anna Tegon, Berkay Döner, Xiaying Wang, Yawei Li & Luca Benini.
 
+## Branch Contributions
+
+This branch (`[feature/tcn-bci2a-motor-imagery](https://github.com/elisa-v/BioFoundation/tree/feature/tcn-bci2a-motor-imagery)`) adds a reproducible pipeline for BCI2A motor imagery experiments, including new scripts for preprocessing, flexible data splits, and TCN model training.  
+
+See [docs/README_contrib.md](https://github.com/elisa-v/BioFoundation/blob/feature/tcn-bci2a-motor-imagery/docs/README_contrib.md) for details and instructions.
+
+Author: Elisa Vasta
+
+
 ## About
 
 **BioFoundation** is a flexible and extensible codebase for deep learning with biological signals. This repository is designed to support a variety of research projects, and currently hosts the work of multiple papers on EEG analysis.
