@@ -51,7 +51,7 @@ This contribution adds an end-to-end pipeline for **BCI Competition IV – Datas
 
 ## Quick Start
 
-1) **Download data**. Get BCI IV-2a from the BNCI Horizon site [text](https://bnci-horizon-2020.eu/database/data-sets) and place `.mat` files under:
+1) **Download data**. Get BCI IV-2a from the BNCI Horizon site [BNCI Horizon 2020](https://bnci-horizon-2020.eu/database/data-sets) and place `.mat` files under:
 ```bash
 <ABS_PATH>/data/BCI2A_data/raw
 ```
