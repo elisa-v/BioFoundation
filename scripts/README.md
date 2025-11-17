@@ -1,4 +1,4 @@
-Copyright (C) 2025 ETH Zurich, Switzerland. SPDX-License-Identifier: Apache-2.0. See LICENSE file at the root of the repository for details.
+
 
 # Scripts
 

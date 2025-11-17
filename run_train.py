@@ -34,7 +34,7 @@ from pytorch_lightning import seed_everything
 from datetime import datetime
 
 
-os.environ['DATA_PATH'] = "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\data\\"
+os.environ['DATA_PATH'] = "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\data\\leave_one_out\\"
 os.environ['CHECKPOINT_DIR'] = "C:\\Users\\elisa\\Documents\\elisa_projects\\BioFoundation\\runs\\checkpoints"
 
 OmegaConf.register_new_resolver("env", lambda key: os.getenv(key))
