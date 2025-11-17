@@ -26,7 +26,7 @@ Authors: Thorir Mar Ingolfsson, Anna Tegon, Berkay Döner, Xiaying Wang, Yawei L
 
 This branch (`feature/tcn-bci2a-motor-imagery`) adds a reproducible pipeline for BCI2A motor imagery experiments, including new scripts for preprocessing, flexible data splits, and TCN model training.  
 
-See [README_contrib.md](./README_contrib.md) for details and instructions.
+See [docs/README_contrib.md](https://github.com/elisa-v/BioFoundation/blob/feature/tcn-bci2a-motor-imagery/docs/README_contrib.md) for details and instructions.
 
 Author: Elisa Vasta
 
