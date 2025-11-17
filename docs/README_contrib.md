@@ -9,7 +9,7 @@ This contribution adds an end-to-end pipeline for **BCI Competition IV – Datas
 ---
 
 ## What’s included
-- `scripts/process_eeg_bci2a.py`: load `.mat`, filter, EOG-regress, cut MI windows, export **pickles**.
+- `scripts/process_eeg_bci2a.py`: load `.mat`, filter, EOG-regress, cut MI windows, export **pickles**. See [scripts/README.md](https://github.com/elisa-v/BioFoundation/blob/feature/tcn-bci2a-motor-imagery/scripts/README.md) for more details.
 - `make_datasets/make_hdf5.py`: existing functions to bundle pickles → **HDF5** (`train/val/test.h5`) 
 - `models/tcn_baseline.py`: simple, clean TCN classifier (`(B, 22, T) → (B, num_classes)`), where B is the batch size and T the temporal dimension.
 - `config/data_module/finetune_data_module_bci2a.yaml`: HDF5 data module (no squeeze, finetune mode).
