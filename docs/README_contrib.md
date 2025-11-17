@@ -15,32 +15,6 @@ This contribution adds an end-to-end pipeline for **BCI Competition IV – Datas
 - `config/data_module/finetune_data_module_bci2a.yaml`: HDF5 data module (no squeeze, finetune mode).
 - `config/experiment/BCI2A_TCN_LR.yaml` and `BCI2A_TCN_4C.yaml`: 2 different experiments for **binary classification** (left and right hand imaginary movements) or **4-class classification** (left and right hand + feet and tongue imaginary movements).
 
-### Data layout (recommended)
-```bash
-BIOFOUNDATION/
-└── data/                          
-    ├── raw/
-    │   └── A01T.mat     # A01T.mat ... A09E.mat
-    └── BCI2A_data/
-        ├── processed/
-        │   ├── train/
-        │   │   └── example.pkl # each: {'X': [22, T], 'y': int}
-        │   ├── val/
-        │   │   └── example.pkl 
-        │   └── test/.pkl
-        │       └── example.pkl 
-        ├── train.h5
-        ├── val.h5
-        └── test.h5
-
-```
-**Labels**
-- **LR** task: `0 = Left`, `1 = Right`
-- **4C** task: `0 = Left`, `1 = Right`, `2 = Feet`, `3 = Tongue`
-
-**Signal shape**: saved per sample as **[22, T]** (channels first; T≈625 for 2.5 s at 250 Hz).  
-**MI window**: **3.5–6.0 s** post-cue (2.5 s).
-
 ---
 
 ## Model & Training Design Choices
@@ -58,8 +32,7 @@ BIOFOUNDATION/
 
 ### Signal Preprocessing 
 - Band-pass **0.5–40 Hz** on EEG, 22 channels only for classification.
-- **EOG regression** (least squares) from 3 EOG channels:  
-  \( S = Y - U(U^\top U)^{-1}U^\top Y \)
+- **EOG regression** (least squares) from 3 EOG channels.
 - **MI window:** 3.5–6.0 s (2.5s duration) post-cue.
 - **Saved sample:** `X ∈ ℝ^{22×T}`, `y ∈ {0,1}` (LR) or `{0,1,2,3}` (4C).
 
@@ -73,7 +46,6 @@ BIOFOUNDATION/
 - **PyTorch** + **PyTorch Lightning** for training loops & checkpointing.
 - **Hydra** for reproducible, composable configs.
 - **Single-GPU** training supported out-of-the-box.
-
 
 ---
 
@@ -123,3 +95,30 @@ TensorBoard + checkpoints are stored under:
 CHECKPOINT_DIR/<tag>/<timestamp>/
 ```
 
+---
+
+### Data layout (recommended)
+```bash
+BIOFOUNDATION/
+└── data/                          
+    ├── raw/
+    │   └── A01T.mat     # A01T.mat ... A09E.mat
+    └── BCI2A_data/
+        ├── processed/
+        │   ├── train/
+        │   │   └── example.pkl # each: {'X': [22, T], 'y': int}
+        │   ├── val/
+        │   │   └── example.pkl 
+        │   └── test/.pkl
+        │       └── example.pkl 
+        ├── train.h5
+        ├── val.h5
+        └── test.h5
+
+```
+**Labels**
+- **LR** task: `0 = Left`, `1 = Right`
+- **4C** task: `0 = Left`, `1 = Right`, `2 = Feet`, `3 = Tongue`
+
+**Signal shape**: saved per sample as **[22, T]** (channels first; T≈625 for 2.5 s at 250 Hz).  
+**MI window**: **3.5–6.0 s** post-cue (2.5 s).
