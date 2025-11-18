@@ -107,13 +107,11 @@ class FinetuneTaskTCN(pl.LightningModule):
         if self.classification_type in ("bc", "mcc", "ml"):
             y_pred_probs = torch.softmax(y_pred_logits, dim=1)
             y_pred_label = torch.argmax(y_pred_probs, dim=1)
-        elif self.classification_type == "mc":
-            y_pred_probs = torch.sigmoid(y_pred_logits)
-            y_pred_label = torch.round(y_pred_probs)
-        elif self.classification_type == "mmc":
-            y_pred_logits = y_pred_logits.view(-1, 6)
-            y_pred_probs = torch.sigmoid(y_pred_logits)
-            y_pred_label = torch.argmax(y_pred_probs, dim=-1)
+        else:
+            raise ValueError(
+                f"Unsupported classification_type: {self.classification_type}. "
+                "Expected 'bc' or 'mcc'."
+            )
 
         return {
             'label': y_pred_label,
@@ -127,16 +125,8 @@ class FinetuneTaskTCN(pl.LightningModule):
         if self.normalize:
             X = self.normalize_fct(X)
 
-        if self.classification_type == "mmc":
-            y = y.view(-1)
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y)
-        elif self.classification_type == "mc":
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y.float())
-        else:
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y)
+        y_pred = self._step(X)
+        loss = self.criterion(y_pred['logits'], y)
 
         self.train_label_metrics(y_pred['label'], y)
         self.train_logit_metrics(self._handle_binary(y_pred['logits']), y)
@@ -151,16 +141,8 @@ class FinetuneTaskTCN(pl.LightningModule):
         if self.normalize:
             X = self.normalize_fct(X)
 
-        if self.classification_type == "mmc":
-            y = y.view(-1)
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y)
-        elif self.classification_type == "mc":
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y.float())
-        else:
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y)
+        y_pred = self._step(X)
+        loss = self.criterion(y_pred['logits'], y)
 
         self.val_label_metrics(y_pred['label'], y)
         self.val_logit_metrics(self._handle_binary(y_pred['logits']), y)
@@ -175,16 +157,8 @@ class FinetuneTaskTCN(pl.LightningModule):
         if self.normalize:
             X = self.normalize_fct(X)
 
-        if self.classification_type == "mmc":
-            y = y.view(-1)
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y)
-        elif self.classification_type == "mc":
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y.float())
-        else:
-            y_pred = self._step(X)
-            loss = self.criterion(y_pred['logits'], y)
+        y_pred = self._step(X)
+        loss = self.criterion(y_pred['logits'], y)
 
         self.test_label_metrics(y_pred['label'], y)
         self.test_logit_metrics(self._handle_binary(y_pred['logits']), y)
@@ -245,7 +219,7 @@ class FinetuneTaskTCN(pl.LightningModule):
         Returns:
             torch.Tensor: Probabilities for the positive class of shape [batch_size].
         """
-        if self.classification_task == 'binary' and self.classification_type != 'mc':
+        if self.classification_task == 'binary':
             return preds[:, 1]  # Extract positive class probabilities
         else:
             return preds
