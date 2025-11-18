@@ -17,16 +17,14 @@ class FinetuneTaskTCN(pl.LightningModule):
     PyTorch Lightning module for fine-tuning TCN models, with support for:
 
     - Classification types:
-        - `bc`: Binary Classification
-        - `ml`: Multi-Label Classification
-        - 'mc': Multi-Label Classification for TUAR
-        - `mcc`: Multi-Class Classification
-        - `mmc`: Multi-Class Multi-Output Classification
+        - `bc`: Binary Classification (2 classes)
+        - `mcc`: Multi-Class Classification (k-classes k>2)
   
     - Metric logging during training, validation, and testing, including accuracy, precision, recall, F1 score, AUROC, and more
     - Optional input normalization with configurable normalization functions
     - Custom optimizer support including SGD, Adam, AdamW, and LAMB
     - Learning rate schedulers with configurable scheduling strategies
+    - Loss: CrossEntropyLoss for both (binary is handled as num_classes=2).
     
     Note: This task is optimized for TCN models and does not use layer-wise learning rate decay.
     """
@@ -40,10 +38,8 @@ class FinetuneTaskTCN(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(hparams)
 
-        # Tensor Core matmul precision enables
-        # improved throughput on GPUs with Tensor Cores (e.g., RTX 30xx).
-        if torch.cuda.is_available():
-            # 'medium' is a good balance between speed and numerical stability.
+        # enable Tensor Core matmul on compatible GPUs (e.g., RTX 30xx).
+        if torch.cuda.is_available(): # 'medium' (good balance between speed and numerical stability)
             torch.set_float32_matmul_precision('medium')
 
         self.model = hydra.utils.instantiate(self.hparams.model)
@@ -58,11 +54,14 @@ class FinetuneTaskTCN(pl.LightningModule):
                 self.hparams.input_normalization.quartile_normalization_upper_val
             )
 
-        # Loss function
-        if self.classification_type == "mc":
-            self.criterion = nn.BCEWithLogitsLoss()
-        else:
+        # Loss function (CE for both bc and mcc)
+        if self.classification_type in {"bc", "mcc"}:
             self.criterion = nn.CrossEntropyLoss()
+        else:
+            raise ValueError(f"Unsupported classification_type: {self.classification_type}")
+
+
+        self.criterion = nn.CrossEntropyLoss()
 
         # Classification mode detection
         if not isinstance(self.num_classes, int):
